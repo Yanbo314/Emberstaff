@@ -255,8 +255,3 @@ overlay sprites with their own lifetimes.
 - Spawner tiles with population caps, a second enemy archetype, and procedurally generated terrain that
   respects the jump envelope derived from the movement constants.
 - Unit tests for the pure functions (collision resolution, level parsing, line of sight).
-
-## Credits
-
-Code, pixel art and sound design by Yanbo Liu. Built with [raylib](https://www.raylib.com/) by Ramon Santamaria.
-Released under the [MIT License](LICENSE).
