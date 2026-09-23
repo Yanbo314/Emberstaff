@@ -29,10 +29,12 @@ constexpr float LOW_JUMP_CUT  = 0.45f;
 constexpr float MAX_FALL      = 1500.0f;
 constexpr float AIR_JUMP_LOCKOUT = 0.10f;
 
-constexpr const char* CHAR_DIRS[] = { "art/character/",  "D:/art_for_game/character/"  };
-constexpr const char* BG_DIRS[]   = { "art/background/", "D:/art_for_game/background/" };
-constexpr const char* SFX_DIRS[]  = { "art/sfx/",        "D:/art_for_game/sfx/"        };
-constexpr int ASSET_DIR_COUNT = 2;
+constexpr const char* GAME_TITLE = "Emberstaff";
+
+constexpr const char* CHAR_DIR   = "assets/character/";
+constexpr const char* BG_DIR     = "assets/background/";
+constexpr const char* SFX_DIR    = "assets/sfx/";
+constexpr const char* LEVEL_FILE = "levels/level.txt";
 
 constexpr float CHAR_DRAW_SIZE     = 64.0f;
 constexpr float PICKUP_DRAW_SIZE   = 32.0f;
@@ -127,7 +129,20 @@ constexpr float FLAG_FRAME_TIME = 0.15f;
 constexpr float GOAL_DRAW_W     = 64.0f;
 constexpr float GOAL_DRAW_H     = 96.0f;
 
-constexpr const char* MAP_FILE = "level.txt";
+std::string gContentRoot = "./";
+
+std::string LocateContentRoot() {
+	const std::string exeDir = GetApplicationDirectory();
+	std::string candidates[5] = { "./", exeDir, exeDir + "../", exeDir + "../../", exeDir + "../../../" };
+	for (const std::string& root : candidates)
+		if (DirectoryExists((root + "assets").c_str())) return root;
+	TraceLog(LOG_WARNING, "CONTENT: no 'assets' folder next to the working directory or the executable; using placeholder graphics");
+	return "./";
+}
+
+std::string ContentPath(const char* dir, const char* name = "") {
+	return gContentRoot + dir + name;
+}
 
 struct SpriteSheet {
 	Texture2D tex{};
@@ -154,18 +169,10 @@ struct GameAssets {
 
 GameAssets gAssets;
 
-const char* ResolveAssetPath(const char* const* dirs, const char* name) {
-	for (int i = 0; i < ASSET_DIR_COUNT; i++) {
-		const char* path = TextFormat("%s%s", dirs[i], name);
-		if (FileExists(path)) return path;
-	}
-	return TextFormat("%s%s", dirs[0], name);
-}
-
-SpriteSheet LoadSheet(const char* const* dirs, const char* name, int frames) {
+SpriteSheet LoadSheet(const char* dir, const char* name, int frames) {
 	SpriteSheet s;
 	s.frames = frames;
-	Image img = LoadImage(ResolveAssetPath(dirs, name));
+	Image img = LoadImage(ContentPath(dir, name).c_str());
 	if (img.data == nullptr) {
 		TraceLog(LOG_WARNING, "Missing sprite: %s", name);
 		return s;
@@ -184,34 +191,34 @@ SpriteSheet LoadSheet(const char* const* dirs, const char* name, int frames) {
 }
 
 void LoadAssets() {
-	gAssets.skyBg[0]    = LoadSheet(BG_DIRS, "sky_bg_1.png", 1);
-	gAssets.skyBg[1]    = LoadSheet(BG_DIRS, "sky_bg_2.png", 1);
-	gAssets.skyBg[2]    = LoadSheet(BG_DIRS, "sky_bg_3.png", 1);
-	gAssets.walk[0]     = LoadSheet(CHAR_DIRS, "mage_walk_staff.png", 6);
-	gAssets.walk[1]     = LoadSheet(CHAR_DIRS, "mage_walk_sword.png", 6);
-	gAssets.jump[0]     = LoadSheet(CHAR_DIRS, "mage_jump_staff.png", 3);
-	gAssets.jump[1]     = LoadSheet(CHAR_DIRS, "mage_jump_sword.png", 3);
-	gAssets.attack[0]   = LoadSheet(CHAR_DIRS, "mage_attack_staff.png", 6);
-	gAssets.attack[1]   = LoadSheet(CHAR_DIRS, "mage_attack_sword.png", 6);
-	gAssets.hurt[0]     = LoadSheet(CHAR_DIRS, "mage_hurt_staff.png", 2);
-	gAssets.hurt[1]     = LoadSheet(CHAR_DIRS, "mage_hurt_sword.png", 2);
-	gAssets.roll        = LoadSheet(CHAR_DIRS, "mage_roll.png", 4);
-	gAssets.fireball    = LoadSheet(CHAR_DIRS, "fireball.png", 3);
-	gAssets.coin        = LoadSheet(CHAR_DIRS, "coin_spin.png", 8);
-	gAssets.health      = LoadSheet(CHAR_DIRS, "health_potion_spin.png", 8);
-	gAssets.energy      = LoadSheet(CHAR_DIRS, "energy_bottle_spin.png", 8);
-	gAssets.enemyMove   = LoadSheet(CHAR_DIRS, "enemy_move.png", 4);
-	gAssets.enemyAttack = LoadSheet(CHAR_DIRS, "enemy_attack.png", 3);
-	gAssets.enemyHurt   = LoadSheet(CHAR_DIRS, "enemy_hurt.png", 2);
-	gAssets.enemyDeath  = LoadSheet(CHAR_DIRS, "enemy_death.png", 5);
-	gAssets.fxHeal      = LoadSheet(CHAR_DIRS, "fx_heal_plus.png", 1);
-	gAssets.fxSparkle   = LoadSheet(CHAR_DIRS, "fx_coin_sparkle.png", 4);
-	gAssets.tileGrass   = LoadSheet(BG_DIRS, "tile_grass_top.png", 1);
-	gAssets.tileDirt    = LoadSheet(BG_DIRS, "tile_dirt.png", 1);
-	gAssets.tileStoneA  = LoadSheet(BG_DIRS, "tile_stone_a.png", 1);
-	gAssets.tileStoneB  = LoadSheet(BG_DIRS, "tile_stone_b.png", 1);
-	gAssets.flag        = LoadSheet(CHAR_DIRS, "checkpoint_flag.png", 4);
-	gAssets.goal        = LoadSheet(CHAR_DIRS, "goal_door.png", 1);
+	gAssets.skyBg[0]    = LoadSheet(BG_DIR, "sky_bg_1.png", 1);
+	gAssets.skyBg[1]    = LoadSheet(BG_DIR, "sky_bg_2.png", 1);
+	gAssets.skyBg[2]    = LoadSheet(BG_DIR, "sky_bg_3.png", 1);
+	gAssets.walk[0]     = LoadSheet(CHAR_DIR, "mage_walk_staff.png", 6);
+	gAssets.walk[1]     = LoadSheet(CHAR_DIR, "mage_walk_sword.png", 6);
+	gAssets.jump[0]     = LoadSheet(CHAR_DIR, "mage_jump_staff.png", 3);
+	gAssets.jump[1]     = LoadSheet(CHAR_DIR, "mage_jump_sword.png", 3);
+	gAssets.attack[0]   = LoadSheet(CHAR_DIR, "mage_attack_staff.png", 6);
+	gAssets.attack[1]   = LoadSheet(CHAR_DIR, "mage_attack_sword.png", 6);
+	gAssets.hurt[0]     = LoadSheet(CHAR_DIR, "mage_hurt_staff.png", 2);
+	gAssets.hurt[1]     = LoadSheet(CHAR_DIR, "mage_hurt_sword.png", 2);
+	gAssets.roll        = LoadSheet(CHAR_DIR, "mage_roll.png", 4);
+	gAssets.fireball    = LoadSheet(CHAR_DIR, "fireball.png", 3);
+	gAssets.coin        = LoadSheet(CHAR_DIR, "coin_spin.png", 8);
+	gAssets.health      = LoadSheet(CHAR_DIR, "health_potion_spin.png", 8);
+	gAssets.energy      = LoadSheet(CHAR_DIR, "energy_bottle_spin.png", 8);
+	gAssets.enemyMove   = LoadSheet(CHAR_DIR, "enemy_move.png", 4);
+	gAssets.enemyAttack = LoadSheet(CHAR_DIR, "enemy_attack.png", 3);
+	gAssets.enemyHurt   = LoadSheet(CHAR_DIR, "enemy_hurt.png", 2);
+	gAssets.enemyDeath  = LoadSheet(CHAR_DIR, "enemy_death.png", 5);
+	gAssets.fxHeal      = LoadSheet(CHAR_DIR, "fx_heal_plus.png", 1);
+	gAssets.fxSparkle   = LoadSheet(CHAR_DIR, "fx_coin_sparkle.png", 4);
+	gAssets.tileGrass   = LoadSheet(BG_DIR, "tile_grass_top.png", 1);
+	gAssets.tileDirt    = LoadSheet(BG_DIR, "tile_dirt.png", 1);
+	gAssets.tileStoneA  = LoadSheet(BG_DIR, "tile_stone_a.png", 1);
+	gAssets.tileStoneB  = LoadSheet(BG_DIR, "tile_stone_b.png", 1);
+	gAssets.flag        = LoadSheet(CHAR_DIR, "checkpoint_flag.png", 4);
+	gAssets.goal        = LoadSheet(CHAR_DIR, "goal_door.png", 1);
 }
 
 struct GameSounds {
@@ -226,12 +233,12 @@ struct GameSounds {
 GameSounds gSounds;
 Sound LoadSfx(const char* name, float volume) {
 	Sound s{};
-	const char* path = ResolveAssetPath(SFX_DIRS, name);
-	if (!FileExists(path)) {
+	const std::string path = ContentPath(SFX_DIR, name);
+	if (!FileExists(path.c_str())) {
 		TraceLog(LOG_WARNING, "Missing sfx: %s", name);
 		return s;
 	}
-	s = LoadSound(path);
+	s = LoadSound(path.c_str());
 	if (IsSoundValid(s)) SetSoundVolume(s, volume);
 	return s;
 }
@@ -255,9 +262,9 @@ void LoadSounds() {
 	gSounds.win        = LoadSfx("win.wav",         0.60f);
 	gSounds.death      = LoadSfx("death.wav",       0.60f);
 
-	const char* musicPath = ResolveAssetPath(SFX_DIRS, "music.wav");
-	if (FileExists(musicPath)) {
-		gSounds.music = LoadMusicStream(musicPath);
+	const std::string musicPath = ContentPath(SFX_DIR, "music.wav");
+	if (FileExists(musicPath.c_str())) {
+		gSounds.music = LoadMusicStream(musicPath.c_str());
 		gSounds.musicOk = IsMusicValid(gSounds.music);
 		if (gSounds.musicOk) {
 			gSounds.music.looping = true;
@@ -472,13 +479,13 @@ void LoadDefaultMap() {
 }
 
 void SaveMap() {
-	std::ofstream f(MAP_FILE);
+	std::ofstream f(ContentPath(LEVEL_FILE));
 	if (!f) return;
 	for (const auto& row : gMap) f << row << "\n";
 }
 
 bool LoadMap() {
-	std::ifstream f(MAP_FILE);
+	std::ifstream f(ContentPath(LEVEL_FILE));
 	if (!f) return false;
 	std::vector<std::string> rows;
 	std::string line;
@@ -1450,7 +1457,7 @@ struct Editor {
 };
 
 void EditorInit(Editor& ed) {
-	ed.cam = { 0 };
+	ed.cam = {};
 	ed.cam.offset = { SCREEN_WIDTH / 2.0f, SCREEN_HEIGHT / 2.0f };
 	ed.cam.zoom = 1.0f;
 	Vector2 spawn = FindSpawn();
@@ -1552,10 +1559,13 @@ void DrawEditor(const Editor& ed) {
 
 int main() {
 	SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT);
-	InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "My Game");
+	InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, GAME_TITLE);
 	SetWindowMinSize(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
 	SetTargetFPS(60);
 	SetExitKey(KEY_NULL);
+
+	gContentRoot = LocateContentRoot();
+	TraceLog(LOG_INFO, "CONTENT: root resolved to '%s'", gContentRoot.c_str());
 
 	InitAudioDevice();
 	LoadAssets();
@@ -1566,7 +1576,7 @@ int main() {
 
 	if (!LoadMap()) LoadDefaultMap();
 
-	Camera2D camera = { 0 };
+	Camera2D camera{};
 	camera.offset = { SCREEN_WIDTH / 2.0f, SCREEN_HEIGHT / 2.0f };
 	camera.zoom = 1.0f;
 
@@ -1602,8 +1612,7 @@ int main() {
 		ClearBackground(DARKGRAY);
 
 		if (state == GameState::MENU) {
-			const char* title = "MY GAME";
-			DrawText(title, SCREEN_WIDTH / 2 - MeasureText(title, 60) / 2, 80, 60, RAYWHITE);
+			DrawText(GAME_TITLE, SCREEN_WIDTH / 2 - MeasureText(GAME_TITLE, 60) / 2, 80, 60, RAYWHITE);
 			int btnW = 320, btnX = SCREEN_WIDTH / 2 - btnW / 2;
 			if (DrawButton("Start New Game", btnX, 210, btnW, 55)) {
 				ResetGame(player, pickups, enemies, fireballs, fxs);
